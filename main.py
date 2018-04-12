@@ -8,15 +8,15 @@ import argparse
 import model
 import evaluate
 
-# PATH_TO_TRAIN = './data-3mi/rsc15_train_full.txt'
-PATH_TO_TRAIN = './data-3mi/rsc15_test.txt'
+PATH_TO_TRAIN = './data-3mi/rsc15_train_full.txt'
+# PATH_TO_TRAIN = './data-3mi/rsc15_test.txt'
 PATH_TO_TEST = './data-3mi/rsc15_test.txt'
 
 
 class Args():
     is_training = False
     n_epochs = 10
-    batch_size = 50
+    batch_size = 100
     layers = 1
     rnn_size = 100
     test_model = 1
@@ -71,9 +71,10 @@ def main():
     args.loss = command_line.loss
     args.checkpoint_dir = command_line.checkpoint_dir
     args.dropout_p_hidden = 1.0 if args.is_training == 0 else command_line.dropout
-    print(args)
+
 
     with tf.Session() as sess:
+        print("\n\n\nBEGIN: Batch size: {}, Loss: {}".format(args.batch_size, args.loss))
         gru = model.GRU4Rec(sess, args)
         if args.is_training:
             print("Traing only")
