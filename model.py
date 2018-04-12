@@ -234,4 +234,3 @@ class GRU4Rec:
         preds, self.predict_state = self.sess.run(fetches, feed_dict)
         preds = np.asarray(preds).T
         return pd.DataFrame(data=preds, index=itemidmap.index)
-
