@@ -91,7 +91,7 @@ def main():
                 args.test_model = i
                 gru = model.GRU4Rec(eval_sess, args)
                 res = evaluate.evaluate_sessions_batch(gru, data, valid, batch_size=args.batch_size)
-                print('Epoch {}\tRecall@20: {}\tMRR@20: {}\tLoss: {}'.format(i,res[0], res[1], res[2]))
+                print('Epoch {}\tRecall@20: {}\tMRR@20: {}'.format(i,res[0], res[1]))
                 result.append(res)
         with open(args.checkpoint_dir+'_result_'+str(args.loss)+'_'+str(args.batch_size)+'.txt','w') as file:
             for rs in result:

@@ -49,6 +49,14 @@ class GRU4Rec:
             else:
                 self.final_activation = self.tanh
             self.loss_function = self.top1
+        elif args.loss == 'bpr_max':
+            if args.final_act == 'linear':
+                self.final_activation = self.linear
+            elif args.final_act == 'relu':
+                self.final_activation = self.relu
+            else:
+                self.final_activation = self.tanh
+            self.loss_function = self.bpr_max
         else:
             raise NotImplementedError
         self.checkpoint_dir = args.checkpoint_dir
@@ -97,6 +105,11 @@ class GRU4Rec:
         term1 = tf.reduce_mean(tf.nn.sigmoid(-tf.diag_part(yhat) + yhatT) + tf.nn.sigmoid(yhatT ** 2), axis=0)
         term2 = tf.nn.sigmoid(tf.diag_part(yhat) ** 2) / self.batch_size
         return tf.reduce_mean(term1 - term2)
+
+    def bpr_max(self, yhat):
+        softmax_score = self.softmax(yhat)
+        yhatT = tf.transpose(yhat)
+        return tf.reduce_sum(-tf.log(tf.nn.sigmoid(tf.diag_part(yhat) - yhatT))*tf.transpose(softmax_score))
 
     ################BUILD MODEL###################
     def build_model(self):
