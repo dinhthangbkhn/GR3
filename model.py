@@ -109,7 +109,21 @@ class GRU4Rec:
     def bpr_max(self, yhat):
         softmax_score = self.softmax(yhat)
         yhatT = tf.transpose(yhat)
-        return tf.reduce_sum(-tf.log(tf.nn.sigmoid(tf.diag_part(yhat) - yhatT))*tf.transpose(softmax_score))
+        return tf.reduce_sum(-tf.log(tf.nn.sigmoid(tf.diag_part(yhat) - yhatT))*tf.transpose(softmax_score))/self.batch_size
+
+    #######################LOSS FOR TEST###############################
+    def cross_entropy_test_loss(self, yhat):
+        label_one_hot = tf.one_hot(self.Y, depth=self.n_items)
+        return tf.reduce_mean(-tf.log(label_one_hot*yhat))
+
+    def bpr_test_loss(self, yhat):
+        label_one_hot = tf.one_hot(self.Y, depth=self.n_items)
+        return tf.reduce_mean(-tf.log(tf.nn.sigmoid(label_one_hot*yhat - yhat)))
+
+    def bpr_max_loss(self, yhat):
+        label_one_hot = tf.one_hot(self.Y, depth=self.n_items)
+        softmax_score = self.softmax(yhat)
+        return tf.reduce_sum(-tf.log(tf.nn.sigmoid(label_one_hot*yhat - yhat)) * softmax_score)/self.batch_size
 
     ################BUILD MODEL###################
     def build_model(self):
@@ -141,6 +155,7 @@ class GRU4Rec:
         else:
             logits = tf.matmul(output, W, transpose_b=True) + b
             self.yhat = self.final_activation(logits)
+            # self.cost = self.cross_entropy_test_loss(self.yhat)
 
     def init(self, data):
         data.sort_values([self.session_key, self.time_key], ascending=True)
@@ -232,5 +247,6 @@ class GRU4Rec:
         for i in range(self.layers):
             feed_dict[self.state[i]] = self.predict_state[i]
         preds, self.predict_state = self.sess.run(fetches, feed_dict)
+        # print(cost)
         preds = np.asarray(preds).T
         return pd.DataFrame(data=preds, index=itemidmap.index)
