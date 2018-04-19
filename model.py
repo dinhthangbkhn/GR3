@@ -123,7 +123,7 @@ class GRU4Rec:
     def bpr_max_loss(self, yhat):
         label_one_hot = tf.one_hot(self.Y, depth=self.n_items)
         softmax_score = self.softmax(yhat)
-        return tf.reduce_sum(-tf.log(tf.nn.sigmoid(label_one_hot*yhat - yhat)) * softmax_score)/self.batch_size
+        return tf.log(tf.reduce_sum(tf.nn.sigmoid(label_one_hot*yhat - yhat) * softmax_score))/self.batch_size
 
     ################BUILD MODEL###################
     def build_model(self):

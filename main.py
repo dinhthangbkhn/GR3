@@ -8,10 +8,13 @@ import argparse
 import model
 import evaluate
 
-PATH_TO_TRAIN = './data-3mi/rsc15_train_full.txt'
+PATH_TO_TRAIN = './data-6mi/rsc15_train_full.txt'
 # PATH_TO_TRAIN = './data-3mi/rsc15_test.txt'
-PATH_TO_TEST = './data-3mi/rsc15_test.txt'
+PATH_TO_TEST = './data-6mi/rsc15_test.txt'
 
+# PATH_TO_TRAIN = './data-full/rsc15_train_full.txt'
+# PATH_TO_TRAIN = './data-3mi/rsc15_test.txt'
+# PATH_TO_TEST = './data-full/rsc15_test.txt'
 
 class Args():
     is_training = False
@@ -94,7 +97,7 @@ def main():
                 res = evaluate.evaluate_sessions_batch(gru, data, valid, batch_size=args.batch_size)
                 print('Epoch {}\tRecall@20: {}\tMRR@20: {}'.format(i,res[0], res[1]))
                 result.append(res)
-        with open(args.checkpoint_dir+'_result_'+str(args.loss)+'_'+str(args.batch_size)+'.txt','w') as file:
+        with open(args.checkpoint_dir+'_result_'+str(args.batch_size)+'.txt','w') as file:
             for rs in result:
                 file.write('{}\t{}\n'.format(rs[0], rs[1]))
         # print(result)
