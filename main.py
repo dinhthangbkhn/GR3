@@ -8,9 +8,9 @@ import argparse
 import model
 import evaluate
 
-PATH_TO_TRAIN = './data-6mi/rsc15_train_full.txt'
-# PATH_TO_TRAIN = './data-3mi/rsc15_test.txt'
-PATH_TO_TEST = './data-6mi/rsc15_test.txt'
+# PATH_TO_TRAIN = './data-18mi/rsc15_train_full.txt'
+PATH_TO_TRAIN = './data-3mi/rsc15_train_full.txt'
+PATH_TO_TEST = './data-3mi/rsc15_test.txt'
 
 # PATH_TO_TRAIN = './data-full/rsc15_train_full.txt'
 # PATH_TO_TRAIN = './data-3mi/rsc15_test.txt'
@@ -21,7 +21,7 @@ class Args():
     n_epochs = 10
     batch_size = 100
     layers = 1
-    rnn_size = 100
+    rnn_size = 80
     test_model = 1
     dropout_p_hidden = 0.8
     learning_rate = 0.005
@@ -37,6 +37,7 @@ class Args():
     final_act = 'softmax'
     hidden_act = 'tanh'
     n_items = -1
+    weight_decay=0.5
 
 
 def parseArgs():
@@ -48,18 +49,26 @@ def parseArgs():
     parser.add_argument('--train', default=1, type=int)
     parser.add_argument('--test', default=1, type=int)
     parser.add_argument('--hidden_act', default='tanh', type=str)
-    parser.add_argument('--final_act', default='softmax', type=str)
+    parser.add_argument('--final_act', default='tanh', type=str)
     parser.add_argument('--loss', default='cross-entropy', type=str)
-    parser.add_argument('--dropout', default='0.5', type=float)
+    parser.add_argument('--dropout', default='1', type=float)
     parser.add_argument('--checkpoint_dir', default='dir', type=str)
+    parser.add_argument('--weight_decay', default='0.5', type=float)
+    parser.add_argument('--rnn_size', default='50', type=int)
+    parser.add_argument('--data', default='data-3mi',type=str)
 
     return parser.parse_args()
 
 
 def main():
     command_line = parseArgs()
-    data = pd.read_csv(PATH_TO_TRAIN, sep='\t', dtype={'ItemId': np.int64})
-    valid = pd.read_csv(PATH_TO_TEST, sep='\t', dtype={'ItemId': np.int64})
+    path_to_train = './'+command_line.data+'/rsc15_train_full.txt'
+    path_to_test = './' + command_line.data+'/rsc15_test.txt'
+    print(path_to_train)
+    print(path_to_test)
+    data = pd.read_csv(path_to_train, sep='\t', dtype={'ItemId': np.int64})
+    valid = pd.read_csv(path_to_test, sep='\t', dtype={'ItemId': np.int64})
+
     args = Args()
     args.n_items = len(data['ItemId'].unique())
 
@@ -74,7 +83,8 @@ def main():
     args.loss = command_line.loss
     args.checkpoint_dir = command_line.checkpoint_dir
     args.dropout_p_hidden = 1.0 if args.is_training == 0 else command_line.dropout
-
+    args.weight_decay = command_line.weight_decay
+    args.rnn_size = command_line.rnn_size
 
     with tf.Session() as sess:
         print("\n\n\nBEGIN: Batch size: {}, Loss: {}".format(args.batch_size, args.loss))

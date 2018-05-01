@@ -21,12 +21,15 @@ class GRU4Rec:
         self.item_key = args.item_key
         self.time_key = args.time_key
         self.n_items = args.n_items
+        self.weight_decay = args.weight_decay
+
         if args.hidden_act == 'tanh':
             self.hidden_act = self.tanh
         elif args.hidden_act == 'relu':
             self.hidden_act = self.relu
         else:
             raise NotImplementedError
+
         if args.loss == 'cross-entropy':
             if args.final_act == 'tanh':
                 self.final_activation = self.softmaxth
@@ -92,6 +95,9 @@ class GRU4Rec:
         """
         return tf.nn.softmax(tf.nn.tanh(X))
 
+    def linear(self, X):
+        return X
+
     ########LOSS FUNCTION################
     def cross_entropy(self, yhat):
         return tf.reduce_mean(-tf.log(tf.diag_part(yhat)))
@@ -109,21 +115,9 @@ class GRU4Rec:
     def bpr_max(self, yhat):
         softmax_score = self.softmax(yhat)
         yhatT = tf.transpose(yhat)
-        return tf.reduce_sum(-tf.log(tf.nn.sigmoid(tf.diag_part(yhat) - yhatT))*tf.transpose(softmax_score))/self.batch_size
-
+        # return tf.reduce_sum(-tf.log(tf.nn.sigmoid(tf.diag_part(yhat) - yhatT))*tf.transpose(softmax_score))/self.batch_size
+        return tf.reduce_mean(-tf.log(tf.reduce_sum(tf.nn.sigmoid(tf.diag_part(yhat) - yhat) * softmax_score, axis=1)) + self.weight_decay*tf.reduce_sum(softmax_score*yhat*yhat, axis=1))
     #######################LOSS FOR TEST###############################
-    def cross_entropy_test_loss(self, yhat):
-        label_one_hot = tf.one_hot(self.Y, depth=self.n_items)
-        return tf.reduce_mean(-tf.log(label_one_hot*yhat))
-
-    def bpr_test_loss(self, yhat):
-        label_one_hot = tf.one_hot(self.Y, depth=self.n_items)
-        return tf.reduce_mean(-tf.log(tf.nn.sigmoid(label_one_hot*yhat - yhat)))
-
-    def bpr_max_loss(self, yhat):
-        label_one_hot = tf.one_hot(self.Y, depth=self.n_items)
-        softmax_score = self.softmax(yhat)
-        return tf.log(tf.reduce_sum(tf.nn.sigmoid(label_one_hot*yhat - yhat) * softmax_score))/self.batch_size
 
     ################BUILD MODEL###################
     def build_model(self):
