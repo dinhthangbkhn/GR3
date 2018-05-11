@@ -22,6 +22,7 @@ class GRU4Rec:
         self.time_key = args.time_key
         self.n_items = args.n_items
         self.weight_decay = args.weight_decay
+        self.optimize = args.optimize
 
         if args.hidden_act == 'tanh':
             self.hidden_act = self.tanh
@@ -145,7 +146,12 @@ class GRU4Rec:
             logits = tf.matmul(output, sampled_W, transpose_b=True) + sampled_b
             self.yhat = self.final_activation(logits)
             self.cost = self.loss_function(self.yhat)
-            self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
+            if self.optimize == 'Adam':
+                self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.cost)
+            elif self.optimize == 'RMS':
+                self.train_op = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.cost)
+            elif self.optimize =='GD':
+                self.train_op = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost)
         else:
             logits = tf.matmul(output, W, transpose_b=True) + b
             self.yhat = self.final_activation(logits)

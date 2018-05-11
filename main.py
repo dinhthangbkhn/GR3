@@ -3,7 +3,6 @@ import os
 import tensorflow as tf
 import pandas as pd
 import numpy as np
-import argparse
 
 import model
 import evaluate
@@ -38,6 +37,7 @@ class Args():
     hidden_act = 'tanh'
     n_items = -1
     weight_decay=0.5
+    optimize = 'Adam'
 
 
 def parseArgs():
@@ -56,6 +56,7 @@ def parseArgs():
     parser.add_argument('--weight_decay', default='0.5', type=float)
     parser.add_argument('--rnn_size', default='50', type=int)
     parser.add_argument('--data', default='data-3mi',type=str)
+    parser.add_argument('--optimize', default='Adam', type=str)
 
     return parser.parse_args()
 
@@ -85,7 +86,7 @@ def main():
     args.dropout_p_hidden = 1.0 if args.is_training == 0 else command_line.dropout
     args.weight_decay = command_line.weight_decay
     args.rnn_size = command_line.rnn_size
-
+    args.optimize = command_line.optimize
     with tf.Session() as sess:
         print("\n\n\nBEGIN: Batch size: {}, Loss: {}".format(args.batch_size, args.loss))
         gru = model.GRU4Rec(sess, args)
