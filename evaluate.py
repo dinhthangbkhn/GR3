@@ -104,7 +104,18 @@ def evaluate_sessions(pr, test_data, train_data, items=None, cut_off=20, session
             preds = pr.predict_next(sid, prev_iid, items_to_predict)
             preds[np.isnan(preds)] = 0
             preds += 1e-8 * np.random.rand(len(preds))  # Breaking up ties
+            # if iid not in preds.index:
+            #     rank = cut_off+1
+            # else:
+                # print(preds[iid])
+                # print(iid)
+            # print(type(preds))
             rank = (preds > preds[iid]).sum() + 1
+            # print(preds.iloc[iid] == preds[iid])
+            # print(rank)
+            if i%500 == 0:
+                print(i)
+            # print(iid)
             assert rank > 0
             if rank < cut_off:
                 recall += 1

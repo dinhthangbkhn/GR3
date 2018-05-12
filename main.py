@@ -3,12 +3,13 @@ import os
 import tensorflow as tf
 import pandas as pd
 import numpy as np
-
+import argparse
 import model
 import evaluate
 
 # PATH_TO_TRAIN = './data-18mi/rsc15_train_full.txt'
-PATH_TO_TRAIN = './data-3mi/rsc15_train_full.txt'
+# PATH_TO_TRAIN = './data-3mi/rsc15_train_full.txt'
+PATH_TO_TRAIN = './data-3mi/rsc15_test.txt'
 PATH_TO_TEST = './data-3mi/rsc15_test.txt'
 
 # PATH_TO_TRAIN = './data-full/rsc15_train_full.txt'
@@ -65,6 +66,7 @@ def main():
     command_line = parseArgs()
     path_to_train = './'+command_line.data+'/rsc15_train_full.txt'
     path_to_test = './' + command_line.data+'/rsc15_test.txt'
+    path_to_train = path_to_test
     print(path_to_train)
     print(path_to_test)
     data = pd.read_csv(path_to_train, sep='\t', dtype={'ItemId': np.int64})

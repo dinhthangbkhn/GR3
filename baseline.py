@@ -67,6 +67,8 @@ class ItemKNN:
         index_by_items = data.sort_values(['ItemIdx', self.time_key]).index.values
         self.sims = dict()
         for i in range(n_items):
+            if i%100 == 0:
+                print(i)
             iarray = np.zeros(n_items)
             start = item_offsets[i]
             end = item_offsets[i + 1]
