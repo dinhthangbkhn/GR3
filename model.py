@@ -14,9 +14,6 @@ class GRU4Rec:
         self.batch_size = args.batch_size
         self.dropout_p_hidden = args.dropout_p_hidden
         self.learning_rate = args.learning_rate
-        # self.sigma = args.sigma
-        # self.init_as_normal = args.init_as_normal
-        # self.reset_after_session = args.reset_after_session
         self.session_key = args.session_key
         self.item_key = args.item_key
         self.time_key = args.time_key
@@ -116,7 +113,6 @@ class GRU4Rec:
     def bpr_max(self, yhat):
         softmax_score = self.softmax(yhat)
         yhatT = tf.transpose(yhat)
-        # return tf.reduce_sum(-tf.log(tf.nn.sigmoid(tf.diag_part(yhat) - yhatT))*tf.transpose(softmax_score))/self.batch_size
         return tf.reduce_mean(-tf.log(tf.reduce_sum(tf.nn.sigmoid(tf.diag_part(yhat) - yhat) * softmax_score, axis=1)) + self.weight_decay*tf.reduce_sum(softmax_score*yhat*yhat, axis=1))
     #######################LOSS FOR TEST###############################
 
@@ -171,10 +167,8 @@ class GRU4Rec:
                                    index=itemids)  # chuyen itemid thanh so tuong ung tu 1-> n_items
         data = pd.merge(data, pd.DataFrame({self.item_key: itemids, 'ItemIdx': self.itemidmap[itemids].values}),
                         on=self.item_key, how='inner')
-        # data.to_csv('./data.csv')
         data = data.sort_values([self.session_key, self.time_key], ascending=True)
         offset_sessions = self.init(data)  # session offset la array cac index
-        # print(offset_sessions)
 
         print('fitting model...')
         for epoch in range(self.n_epochs):
