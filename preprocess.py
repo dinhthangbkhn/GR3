@@ -30,17 +30,3 @@ print('Full train set\n\tEvents: {}\n\tSessions: {}\n\tItems: {}'.format(len(tra
 train.to_csv(PATH_TO_PROCESSED_DATA + 'rsc15_train_full.txt', sep='\t', index=False)
 print('Test set\n\tEvents: {}\n\tSessions: {}\n\tItems: {}'.format(len(test), test.SessionId.nunique(), test.ItemId.nunique()))
 test.to_csv(PATH_TO_PROCESSED_DATA + 'rsc15_test.txt', sep='\t', index=False)
-
-tmax = train.Time.max()
-session_max_times = train.groupby('SessionId').Time.max()
-session_train = session_max_times[session_max_times < tmax-86400].index
-session_valid = session_max_times[session_max_times >= tmax-86400].index
-train_tr = train[np.in1d(train.SessionId, session_train)]
-valid = train[np.in1d(train.SessionId, session_valid)]
-valid = valid[np.in1d(valid.ItemId, train_tr.ItemId)]
-tslength = valid.groupby('SessionId').size()
-valid = valid[np.in1d(valid.SessionId, tslength[tslength>=2].index)]
-print('Train set\n\tEvents: {}\n\tSessions: {}\n\tItems: {}'.format(len(train_tr), train_tr.SessionId.nunique(), train_tr.ItemId.nunique()))
-train_tr.to_csv(PATH_TO_PROCESSED_DATA + 'rsc15_train_tr.txt', sep='\t', index=False)
-print('Validation set\n\tEvents: {}\n\tSessions: {}\n\tItems: {}'.format(len(valid), valid.SessionId.nunique(), valid.ItemId.nunique()))
-valid.to_csv(PATH_TO_PROCESSED_DATA + 'rsc15_train_valid.txt', sep='\t', index=False)
