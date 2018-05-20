@@ -66,7 +66,7 @@ def main():
     command_line = parseArgs()
     path_to_train = './'+command_line.data+'/rsc15_train_full.txt'
     path_to_test = './' + command_line.data+'/rsc15_test.txt'
-    path_to_train = path_to_test
+    # path_to_train = path_to_test
     print(path_to_train)
     print(path_to_test)
     data = pd.read_csv(path_to_train, sep='\t', dtype={'ItemId': np.int64})

@@ -25,7 +25,9 @@ def main():
     # print(path_to_test)
     data = pd.read_csv(path_to_train, sep='\t', dtype={'ItemId': np.int64})
     valid = pd.read_csv(path_to_test, sep='\t', dtype={'ItemId': np.int64})
-
+    print(len(valid['SessionId'].unique()))
+    print(len(valid['ItemId'].unique()))
+    return
     itemKNN_model = baseline.ItemKNN()
     itemKNN_model.fit(data)
     result = evaluate.evaluate_sessions(itemKNN_model, valid, data)

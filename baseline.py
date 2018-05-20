@@ -52,9 +52,11 @@ class ItemKNN:
         data.set_index(np.arange(len(data)), inplace=True)
         itemids = data[self.item_key].unique()
         n_items = len(itemids)
+        print("So luong item: ", n_items)
         data = pd.merge(data, pd.DataFrame({self.item_key: itemids, 'ItemIdx': np.arange(len(itemids))}),
                         on=self.item_key, how='inner')
         sessionids = data[self.session_key].unique()
+        print("So luong Session: ", len(sessionids))
         data = pd.merge(data, pd.DataFrame({self.session_key: sessionids, 'SessionIdx': np.arange(len(sessionids))}),
                         on=self.session_key, how='inner')
         supp = data.groupby('SessionIdx').size()
