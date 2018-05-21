@@ -39,6 +39,7 @@ class Args():
     n_items = -1
     weight_decay=0.5
     optimize = 'Adam'
+    evaluate_train = 0
 
 
 def parseArgs():
@@ -58,7 +59,7 @@ def parseArgs():
     parser.add_argument('--rnn_size', default='50', type=int)
     parser.add_argument('--data', default='data-3mi',type=str)
     parser.add_argument('--optimize', default='Adam', type=str)
-
+    parser.add_argument('--evaluate_train', default=0, type=float)
     return parser.parse_args()
 
 
@@ -89,17 +90,18 @@ def main():
     args.weight_decay = command_line.weight_decay
     args.rnn_size = command_line.rnn_size
     args.optimize = command_line.optimize
+    args.evaluate_train = command_line.evaluate_train
+
     with tf.Session() as sess:
         print("\n\n\nBEGIN: Batch size: {}, Loss: {}".format(args.batch_size, args.loss))
         gru = model.GRU4Rec(sess, args)
         if args.is_training:
             print("Traing only")
             gru.fit(data)
-    #     else:
-    #         print('EVALUATE:')
-    #         res = evaluate.evaluate_sessions_batch(gru, data, valid, batch_size=50)
-    #         print('Recall@20: {}\tMRR@20: {}'.format(res[0], res[1]))
+
     if not args.is_training:
+        if args.evaluate_train == 1:
+            valid = data
         result = []
         for i in range(0,args.n_epochs): #number epoch
             tf.reset_default_graph()
@@ -110,10 +112,14 @@ def main():
                 res = evaluate.evaluate_sessions_batch(gru, data, valid, batch_size=args.batch_size)
                 print('Epoch {}\tRecall@20: {}\tMRR@20: {}'.format(i,res[0], res[1]))
                 result.append(res)
-        with open(args.checkpoint_dir+'_result_'+str(args.batch_size)+'.txt','w') as file:
-            for rs in result:
-                file.write('{}\t{}\n'.format(rs[0], rs[1]))
-        # print(result)
+        if args.evaluate_train == 1:
+            with open(args.checkpoint_dir + '_result_in_train.txt', 'w') as file:
+                for rs in result:
+                    file.write('{}\t{}\n'.format(rs[0], rs[1]))
+        else:
+            with open(args.checkpoint_dir+'_result_'+str(args.batch_size)+'.txt','w') as file:
+                for rs in result:
+                    file.write('{}\t{}\n'.format(rs[0], rs[1]))
 
 
 if __name__ == '__main__':
