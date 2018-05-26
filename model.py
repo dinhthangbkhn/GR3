@@ -50,6 +50,14 @@ class GRU4Rec:
             else:
                 self.final_activation = self.tanh
             self.loss_function = self.top1
+        elif args.loss == 'top1_max_wd':
+            if args.final_act == 'linear':
+                self.final_activation = self.linear
+            elif args.final_act == 'relu':
+                self.final_activatin = self.relu
+            else:
+                self.final_activation = self.tanh
+            self.loss_function = self.top1_max_decay
         elif args.loss == 'bpr_max':
             if args.final_act == 'linear':
                 self.final_activation = self.linear
@@ -107,22 +115,24 @@ class GRU4Rec:
     def top1(self, yhat):
         yhatT = tf.transpose(yhat)
         term1 = tf.reduce_mean(tf.nn.sigmoid(-tf.diag_part(yhat) + yhatT) + tf.nn.sigmoid(yhatT ** 2), axis=0)
-        term2 = tf.nn.sigmoid(tf.diag_part(yhat) ** 2) / self.batch_size
-        return tf.reduce_mean(term1 - term2)
+        return tf.reduce_mean(term1)
 
     def bpr_max(self, yhat):
         softmax_score = self.softmax(yhat)
-        yhatT = tf.transpose(yhat)
         return tf.reduce_mean(-tf.log(tf.reduce_sum(tf.nn.sigmoid(tf.diag_part(yhat) - yhat) * softmax_score, axis=1)) + self.weight_decay*tf.reduce_sum(softmax_score*yhat*yhat, axis=1))
-    #######################LOSS FOR TEST###############################
 
+    def top1_max_decay(self, yhat):
+        yhatT = tf.transpose(yhat)
+        softmax_score = self.softmax(yhat)
+        term1 = tf.reduce_sum(softmax_score * (tf.nn.sigmoid(-tf.diag_part(yhat) + yhatT) + self.weight_decay*tf.nn.sigmoid(yhatT ** 2)), axis=1)
+        return tf.reduce_mean(term1)
     ################BUILD MODEL###################
     def build_model(self):
         self.X = tf.placeholder(tf.int32, [self.batch_size], name='input')
         self.Y = tf.placeholder(tf.int32, [self.batch_size], name='output')
         self.state = [tf.placeholder(tf.float32, [self.batch_size, self.rnn_size]) for _ in range(self.layers)]
         initializer = tf.random_uniform_initializer(minval=-0.95, maxval=0.95)
-        # embedding = tf.get_variable('embedding', [self.n_items, self.rnn_size], initializer=initializer)
+
         W = tf.get_variable('W', [self.n_items, self.rnn_size], initializer=initializer)
         b = tf.get_variable('b', [self.n_items], initializer=tf.constant_initializer(0.0))
 
@@ -130,7 +140,6 @@ class GRU4Rec:
         drop_cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=self.dropout_p_hidden)
         stacked_cell = tf.contrib.rnn.MultiRNNCell([drop_cell] * self.layers)
 
-        # input = tf.nn.embedding_lookup(embedding, self.X)
         input = tf.one_hot(self.X, depth=self.n_items)
 
         output, state = stacked_cell(input, tuple(self.state))
@@ -241,6 +250,5 @@ class GRU4Rec:
         for i in range(self.layers):
             feed_dict[self.state[i]] = self.predict_state[i]
         preds, self.predict_state = self.sess.run(fetches, feed_dict)
-        # print(cost)
         preds = np.asarray(preds).T
         return pd.DataFrame(data=preds, index=itemidmap.index)

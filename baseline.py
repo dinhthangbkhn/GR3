@@ -59,33 +59,34 @@ class ItemKNN:
         print("So luong Session: ", len(sessionids))
         data = pd.merge(data, pd.DataFrame({self.session_key: sessionids, 'SessionIdx': np.arange(len(sessionids))}),
                         on=self.session_key, how='inner')
-        supp = data.groupby('SessionIdx').size()
+        supp = data.groupby('SessionIdx').size() #so hang cua session hien tai
         session_offsets = np.zeros(len(supp) + 1, dtype=np.int32)
-        session_offsets[1:] = supp.cumsum()
-        index_by_sessions = data.sort_values(['SessionIdx', self.time_key]).index.values
-        supp = data.groupby('ItemIdx').size()
+        session_offsets[1:] = supp.cumsum() #session tu hang bao nhieu den hang bao nhieu (khi nhom theo SessionIdx)
+        index_by_sessions = data.sort_values(['SessionIdx', self.time_key]).index.values #sap xep theo SessionIdx, cot 2 chi ra cac dong xuat hien SessionIdx do
+        supp = data.groupby('ItemIdx').size() #so hang co chua item co nhan ItemIdx
         item_offsets = np.zeros(n_items + 1, dtype=np.int32)
-        item_offsets[1:] = supp.cumsum()
-        index_by_items = data.sort_values(['ItemIdx', self.time_key]).index.values
+        item_offsets[1:] = supp.cumsum() #item tu hang nao den hang nao (khi nhom theo ItemIdx)
+        index_by_items = data.sort_values(['ItemIdx', self.time_key]).index.values #sắp xếp theo ItemIdx, cột 2 chỉ ra các dòng xuất hiện ItemIdx do, sau do su dung offset se co duoc danh sach cac dong chua item
         self.sims = dict()
         for i in range(n_items):
             if i%100 == 0:
                 print(i)
             iarray = np.zeros(n_items)
-            start = item_offsets[i]
-            end = item_offsets[i + 1]
-            for e in index_by_items[start:end]:
-                uidx = data.SessionIdx.values[e]
-                ustart = session_offsets[uidx]
-                uend = session_offsets[uidx + 1]
-                user_events = index_by_sessions[ustart:uend]
-                iarray[data.ItemIdx.values[user_events]] += 1
-            iarray[i] = 0
+            start = item_offsets[i] #dong dau tien xuat hien itemIdx
+            end = item_offsets[i + 1] #dong cuoi xuat hien itemIdx
+            for e in index_by_items[start:end]: #e la index cua dong
+                uidx = data.SessionIdx.values[e] #sessionIdx cua dong e
+                ustart = session_offsets[uidx] #dong bat dau sessionIdx
+                uend = session_offsets[uidx + 1] #dong ket thuc sessionIdx
+                user_events = index_by_sessions[ustart:uend] #cac dong co trong sessionIdx
+                iarray[data.ItemIdx.values[user_events]] += 1 #data.ItemIdx.values[user_events]: ItemIdx cua cac item trong session
+            iarray[i] = 0 #vecto [N_items,1]
             norm = np.power((supp[i] + self.lmbd), self.alpha) * np.power((supp.values + self.lmbd), (1.0 - self.alpha))
             norm[norm == 0] = 1
             iarray = iarray / norm
-            indices = np.argsort(iarray)[-1:-1 - self.n_sims:-1]
-            self.sims[itemids[i]] = pd.Series(data=iarray[indices], index=itemids[indices])
+            print(iarray)
+            indices = np.argsort(iarray)[-1:-1 - self.n_sims:-1] #lay n_sim phan tu co gia tri cao nhat (lay gia tri ItemIdx)
+            self.sims[itemids[i]] = pd.Series(data=iarray[indices], index=itemids[indices]) #luu lai 1 bang data: diem tuong dong voi item trong indices, index: itemid trong tap du lieu
 
     def predict_next(self, session_id, input_item_id, predict_for_item_ids):
         '''
@@ -108,6 +109,6 @@ class ItemKNN:
         '''
         preds = np.zeros(len(predict_for_item_ids))
         sim_list = self.sims[input_item_id]
-        mask = np.in1d(predict_for_item_ids, sim_list.index)
+        mask = np.in1d(predict_for_item_ids, sim_list.index) #phan tu nao cua sim_list nam trong predict_for_items
         preds[mask] = sim_list[predict_for_item_ids[mask]]
         return pd.Series(data=preds, index=predict_for_item_ids)
