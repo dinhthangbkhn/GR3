@@ -44,11 +44,6 @@ class Args():
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='GRU4Rec args')
-    parser.add_argument('--layer', default=1, type=int)
-    parser.add_argument('--size', default=100, type=int)
-    parser.add_argument('--epoch', default=20, type=int)
-    parser.add_argument('--lr', default=0.001, type=float)
-    parser.add_argument('--train', default=1, type=int)
     parser.add_argument('--test', default=1, type=int)
     parser.add_argument('--hidden_act', default='tanh', type=str)
     parser.add_argument('--final_act', default='tanh', type=str)
@@ -57,6 +52,11 @@ def parseArgs():
     parser.add_argument('--checkpoint_dir', default='dir', type=str)
     parser.add_argument('--weight_decay', default='0.5', type=float)
     parser.add_argument('--rnn_size', default='50', type=int)
+    parser.add_argument('--layer', default=1, type=int)
+    parser.add_argument('--size', default=100, type=int)
+    parser.add_argument('--epoch', default=20, type=int)
+    parser.add_argument('--lr', default=0.001, type=float)
+    parser.add_argument('--train', default=1, type=int)
     parser.add_argument('--data', default='d6mi',type=str)
     parser.add_argument('--optimize', default='Adam', type=str)
     parser.add_argument('--evaluate_train', default=0, type=float)
@@ -76,15 +76,16 @@ def main():
     args = Args()
     args.n_items = len(data['ItemId'].unique())
 
-    args.layers = command_line.layer
-    args.batch_size = command_line.size
-    args.n_epochs = command_line.epoch
     args.learning_rate = command_line.lr
     args.is_training = command_line.train
     args.test_model = command_line.test
     args.hidden_act = command_line.hidden_act
     args.final_act = command_line.final_act
     args.loss = command_line.loss
+    args.layers = command_line.layer
+    args.batch_size = command_line.size
+    args.n_epochs = command_line.epoch
+
     args.checkpoint_dir = command_line.checkpoint_dir
     args.dropout_p_hidden = 1.0 if args.is_training == 0 else command_line.dropout
     args.weight_decay = command_line.weight_decay
@@ -109,7 +110,7 @@ def main():
 
                 args.test_model = i
                 gru = model.GRU4Rec(eval_sess, args)
-                res = evaluate.evaluate_sessions_batch(gru, data, valid, batch_size=args.batch_size)
+                res = evaluate.evaluate_model(gru, data, valid, batch_size=args.batch_size)
                 print('Epoch {}\tRecall@20: {}\tMRR@20: {}'.format(i,res[0], res[1]))
                 result.append(res)
         if args.evaluate_train == 1:
