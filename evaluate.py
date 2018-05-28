@@ -8,7 +8,6 @@ def evaluate_sessions_batch(model, train_data, test_data, cut_off=20, batch_size
                             item_key='ItemId', time_key='Time'):
 
     model.predict = False
-    # Build itemidmap from train data.
     itemids = train_data[item_key].unique()
     itemidmap = pd.Series(data=np.arange(len(itemids)), index=itemids)
 

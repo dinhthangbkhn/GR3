@@ -21,53 +21,26 @@ class GRU4Rec:
         self.weight_decay = args.weight_decay
         self.optimize = args.optimize
 
-        if args.hidden_act == 'tanh':
-            self.hidden_act = self.tanh
-        elif args.hidden_act == 'relu':
-            self.hidden_act = self.relu
-        else:
-            raise NotImplementedError
+        self.hidden_act = self.tanh
 
         if args.loss == 'cross-entropy':
-            if args.final_act == 'tanh':
-                self.final_activation = self.softmaxth
-            else:
-                self.final_activation = self.softmax
+            self.final_activation = self.softmax
             self.loss_function = self.cross_entropy
         elif args.loss == 'bpr':
-            if args.final_act == 'linear':
-                self.final_activation = self.linear
-            elif args.final_act == 'relu':
-                self.final_activation = self.relu
-            else:
-                self.final_activation = self.tanh
+            self.final_activation = self.tanh
             self.loss_function = self.bpr
         elif args.loss == 'top1':
-            if args.final_act == 'linear':
-                self.final_activation = self.linear
-            elif args.final_act == 'relu':
-                self.final_activatin = self.relu
-            else:
-                self.final_activation = self.tanh
+            self.final_activation = self.tanh
             self.loss_function = self.top1
         elif args.loss == 'top1_max_wd':
-            if args.final_act == 'linear':
-                self.final_activation = self.linear
-            elif args.final_act == 'relu':
-                self.final_activatin = self.relu
-            else:
-                self.final_activation = self.tanh
+            self.final_activation = self.tanh
             self.loss_function = self.top1_max_decay
         elif args.loss == 'bpr_max':
-            if args.final_act == 'linear':
-                self.final_activation = self.linear
-            elif args.final_act == 'relu':
-                self.final_activation = self.relu
-            else:
-                self.final_activation = self.tanh
+            self.final_activation = self.tanh
             self.loss_function = self.bpr_max
         else:
             raise NotImplementedError
+
         self.checkpoint_dir = args.checkpoint_dir
 
         self.build_model()
@@ -126,6 +99,7 @@ class GRU4Rec:
         softmax_score = self.softmax(yhat)
         term1 = tf.reduce_sum(softmax_score * (tf.nn.sigmoid(-tf.diag_part(yhat) + yhatT) + self.weight_decay*tf.nn.sigmoid(yhatT ** 2)), axis=1)
         return tf.reduce_mean(term1)
+
     ################BUILD MODEL###################
     def build_model(self):
         self.X = tf.placeholder(tf.int32, [self.batch_size], name='input')
@@ -162,39 +136,39 @@ class GRU4Rec:
             self.yhat = self.final_activation(logits)
             # self.cost = self.cross_entropy_test_loss(self.yhat)
 
-    def init(self, data):
+    def init_offset(self, data):
         data.sort_values([self.session_key, self.time_key], ascending=True)
-        offset_sessions = np.zeros(data[self.session_key].nunique() + 1, dtype=np.int32)
-        offset_sessions[1:] = data.groupby(self.session_key).size().cumsum()
-        return offset_sessions
+        offset = np.zeros(data[self.session_key].nunique() + 1, dtype=np.int32)
+        offset[1:] = data.groupby(self.session_key).size().cumsum()
+        return offset
 
     def fit(self, data):
         self.error_during_train = False
-        itemids = data[self.item_key].unique()  # id cac item khac nhau
-        self.n_items = len(itemids)  # so luong cac item
+        itemids = data[self.item_key].unique()
+        self.n_items = len(itemids)
         self.itemidmap = pd.Series(data=np.arange(self.n_items),
-                                   index=itemids)  # chuyen itemid thanh so tuong ung tu 1-> n_items
+                                   index=itemids)
         data = pd.merge(data, pd.DataFrame({self.item_key: itemids, 'ItemIdx': self.itemidmap[itemids].values}),
                         on=self.item_key, how='inner')
         data = data.sort_values([self.session_key, self.time_key], ascending=True)
-        offset_sessions = self.init(data)  # session offset la array cac index
+        offset = self.init_offset(data)
 
         print('fitting model...')
         for epoch in range(self.n_epochs):
             epoch_cost = []
             state = [np.zeros([self.batch_size, self.rnn_size], dtype=np.float32) for _ in range(self.layers)]
-            session_idx_arr = np.arange(len(offset_sessions) - 1)  # session index
+            list_sessionidx = np.arange(len(offset) - 1)  # session index
             iters = np.arange(self.batch_size)  # so luong batch_size
-            maxiter = iters.max()
-            start = offset_sessions[session_idx_arr[iters]]
-            end = offset_sessions[session_idx_arr[iters] + 1]
+            iter_max = iters.max()
+            start_lines = offset[list_sessionidx[iters]]
+            end_lines= offset[list_sessionidx[iters] + 1]
             finished = False
             while not finished:
-                minlen = (end - start).min()
-                out_idx = data.ItemIdx.values[start]
+                minlen = (end_lines- start_lines).min()
+                out_idx = data.ItemIdx.values[start_lines]
                 for i in range(minlen - 1):
                     in_idx = out_idx
-                    out_idx = data.ItemIdx.values[start + i + 1]
+                    out_idx = data.ItemIdx.values[start_lines + i + 1]
                     # prepare inputs, targeted outputs and hidden states
                     fetches = [self.cost, self.final_state, self.train_op]
                     feed_dict = {self.X: in_idx, self.Y: out_idx}
@@ -208,16 +182,17 @@ class GRU4Rec:
                         self.error_during_train = True
                         return
 
-                start = start + minlen - 1
-                mask = np.arange(len(iters))[(end - start) <= 1]
+                start_lines = start_lines + minlen - 1
+                mask = np.arange(len(iters))[(end_lines- start_lines) <= 1]
+                #append next session to minibatch
                 for idx in mask:
-                    maxiter += 1
-                    if maxiter >= len(offset_sessions) - 1:
+                    iter_max += 1
+                    if iter_max >= len(offset) - 1:
                         finished = True
                         break
-                    iters[idx] = maxiter
-                    start[idx] = offset_sessions[session_idx_arr[maxiter]]
-                    end[idx] = offset_sessions[session_idx_arr[maxiter] + 1]
+                    iters[idx] = iter_max
+                    start_lines[idx] = offset[list_sessionidx[iter_max]]
+                    end_lines[idx] = offset[list_sessionidx[iter_max] + 1]
                 if len(mask):
                     for i in range(self.layers):
                         state[i][mask] = 0

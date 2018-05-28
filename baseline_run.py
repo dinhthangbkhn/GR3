@@ -9,14 +9,14 @@ win_unicode_console.enable()
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='GRU4Rec args')
-    parser.add_argument('--data', default='data-3mi',type=str)
+    parser.add_argument('--data', default='dml10m',type=str)
     return parser.parse_args()
 
 def main():
     command_line = parseArgs()
     path_to_train = './'+command_line.data+'/rsc15_train_full.txt'
     path_to_test = './' + command_line.data+'/rsc15_test.txt'
-    path_to_train = path_to_test
+    # path_to_train = path_to_test
     data = pd.read_csv(path_to_train, sep='\t', dtype={'ItemId': np.int64})
     valid = pd.read_csv(path_to_test, sep='\t', dtype={'ItemId': np.int64})
     print(len(valid['SessionId'].unique()))

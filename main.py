@@ -32,7 +32,7 @@ class Args():
     item_key = 'ItemId'
     time_key = 'Time'
     grad_cap = 0
-    checkpoint_dir = './checkpoint_cr_50_dt_3mi'
+    checkpoint_dir = './checkpoint_dir'
     loss = 'cross-entropy'
     final_act = 'softmax'
     hidden_act = 'tanh'
@@ -57,7 +57,7 @@ def parseArgs():
     parser.add_argument('--checkpoint_dir', default='dir', type=str)
     parser.add_argument('--weight_decay', default='0.5', type=float)
     parser.add_argument('--rnn_size', default='50', type=int)
-    parser.add_argument('--data', default='data-3mi',type=str)
+    parser.add_argument('--data', default='d6mi',type=str)
     parser.add_argument('--optimize', default='Adam', type=str)
     parser.add_argument('--evaluate_train', default=0, type=float)
     return parser.parse_args()
@@ -67,7 +67,7 @@ def main():
     command_line = parseArgs()
     path_to_train = './'+command_line.data+'/rsc15_train_full.txt'
     path_to_test = './' + command_line.data+'/rsc15_test.txt'
-    # path_to_train = path_to_test
+    path_to_train = path_to_test
     print(path_to_train)
     print(path_to_test)
     data = pd.read_csv(path_to_train, sep='\t', dtype={'ItemId': np.int64})
